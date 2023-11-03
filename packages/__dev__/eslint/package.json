@@ -1,0 +1,15 @@
+{
+    "name": "@fit-converter/eslint",
+    "version": "0.0.0",
+    "description": "",
+    "main": ".eslintrc.cjs",
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+      "@vue/eslint-config-typescript": "^11.0.3",
+      "eslint": "^8.46.0",
+      "eslint-plugin-simple-import-sort": "^10.0.0",
+      "eslint-plugin-vue": "^9.16.1"
+    }
+}

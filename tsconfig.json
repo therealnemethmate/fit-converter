@@ -1,0 +1,21 @@
+{
+  "extends": "@fit-converter/tsconfig/tsconfig.json",
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.js",
+    "src/**/*.vue",
+    "vite.config.ts"
+  ],
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@fit-converter/garmin-sdk": ["packages/garmin-sdk/src/index.ts"],
+    },
+  },
+  "references": [
+    {
+      "path": "./tsconfig.node.json"
+    }
+  ]
+}

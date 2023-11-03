@@ -1,0 +1,28 @@
+{
+  "name": "@fit-converter/garmin-sdk",
+  "version": "0.0.0",
+  "private": true,
+  "exports": {
+    ".": {
+      "import": "./dist/graphql-vue.js",
+      "require": "./dist/graphql-vue.umd.cjs"
+    }
+  },
+  "main": "./dist/graphql-vue.umd.cjs",
+  "module": "./dist/graphql-vue.js",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "vue-tsc --noEmit && vite build",
+    "clean": "rm -rf dist",
+    "lint": "eslint --ext .ts,.vue --ignore-path .gitignore . $ESLINT_FLAGS"
+  },
+  "devDependencies": {
+    "@fit-converter/eslint": "workspace:*",
+    "@fit-converter/tsconfig": "workspace:*",
+    "@garmin-fit/sdk": "^21.115.0",
+    "typescript": "^5.1.6",
+    "vite": "^4.4.11"
+  }
+}

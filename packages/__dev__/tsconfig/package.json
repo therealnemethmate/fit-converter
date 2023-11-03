@@ -1,0 +1,9 @@
+{
+  "name": "@fit-converter/tsconfig",
+  "version": "0.0.0",
+  "description": "",
+  "main": "tsconfig.json",
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
