@@ -1,13 +1,11 @@
-declare module '@garmin-fit/sdk' {
-    import { Stream as FileStream } from 'node:stream';
-
+declare module '@garmin/fitsdk' {
     export class Decoder {
-        constructor(stream: FileStream);
+        constructor(stream: Stream);
         read(): FitFileContent;
     }
     
     export class Stream {
-        static fromByteArray(buffer: Buffer): FileStream;
+        static fromByteArray(buffer: Buffer): Stream;
         readByte(): number;
         readBytes(length: number): Buffer;
         readUInt8(): number;

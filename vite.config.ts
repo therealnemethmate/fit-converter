@@ -15,8 +15,7 @@ export default defineConfig(({ mode }) => {
         resolve: {
             alias: {
                 '@': path.resolve('./src'),
-                '@fit-converter/tsconfig': path.resolve('./packages/__dev__/tsconfig/tsconfig.json'),
-                '@fit-converter/eslint': path.resolve('./packages/__dev__/eslint/.eslintrc.js'),
+                '@fit-converter/fit-sdk': path.resolve('./packages/fit-sdk/src'),
             },
         },
         define: {

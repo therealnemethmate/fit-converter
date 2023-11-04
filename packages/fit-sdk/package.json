@@ -1,0 +1,28 @@
+{
+  "name": "@fit-converter/fit-sdk",
+  "version": "0.0.0",
+  "private": true,
+  "exports": {
+    ".": {
+      "import": "./dist/fit-sdk.js",
+      "require": "./dist/fit-sdk.umd.cjs"
+    }
+  },
+  "main": "./dist/fit-sdk.umd.cjs",
+  "module": "./dist/fit-sdk.js",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "vue-tsc --noEmit && vite build",
+    "clean": "rm -rf dist",
+    "lint": "eslint --ext .ts --ignore-path .gitignore . $ESLINT_FLAGS"
+  },
+  "devDependencies": {
+    "@garmin/fitsdk": "^21.115.1",
+    "@types/node": "^20.8.10",
+    "@types/garmin__fitsdk": "workspace:*",
+    "typescript": "^5.1.6",
+    "vite": "^4.4.11"
+  }
+}
