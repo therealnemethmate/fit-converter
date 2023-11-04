@@ -14,7 +14,7 @@ export default defineConfig(({ mode }) => {
         plugins: [vue()],
         resolve: {
             alias: {
-                '@': path.resolve('./app/src'),
+                '@': path.resolve('./src'),
                 '@fit-converter/tsconfig': path.resolve('./packages/__dev__/tsconfig/tsconfig.json'),
                 '@fit-converter/eslint': path.resolve('./packages/__dev__/eslint/.eslintrc.js'),
             },

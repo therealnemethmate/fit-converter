@@ -4,12 +4,12 @@
   "private": true,
   "exports": {
     ".": {
-      "import": "./dist/graphql-vue.js",
-      "require": "./dist/graphql-vue.umd.cjs"
+      "import": "./dist/garmin-sdk.js",
+      "require": "./dist/garmin-sdk.umd.cjs"
     }
   },
-  "main": "./dist/graphql-vue.umd.cjs",
-  "module": "./dist/graphql-vue.js",
+  "main": "./dist/garmin-sdk.umd.cjs",
+  "module": "./dist/garmin-sdk.js",
   "files": [
     "dist"
   ],
