@@ -6,18 +6,30 @@ import { ref } from 'vue';
 
 const fitFile = ref<FitFileContent>();
 
+async function readBuffer(file: File) {
+    const stream = file.stream();
+    const content = await stream.getReader().read();
+    return Buffer.from(content.value?.buffer as ArrayBuffer);
+}
+
 async function handleUpload(event: Event) {
-    console.log('handleFile', { event });
     const file = (event.target as HTMLInputElement).files?.[0];
     if (!file) {
         console.error('No file selected');
         return;
     }
 
-    const stream = file.stream();
-    const content = await stream.getReader().read();
-    const buffer = Buffer.from(content.value?.buffer as ArrayBuffer);
+    const buffer = await readBuffer(file);
     fitFile.value = await parseOneFitFile(buffer);
+}
+
+async function convertToZwo() {
+    if (!fitFile.value) {
+        console.error('No file selected');
+        return;
+    }
+
+    alert('TODO convertToZwo');
 }
 
 </script>
@@ -44,14 +56,15 @@ async function handleUpload(event: Event) {
                         </label>
                     </div>
                 </div>
+                <button class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+                        @click="convertToZwo" :disabled="!fitFile">Convert</button>
             </form>
             <div>
                 <p class="mt-2 text-center text-sm text-gray-600">
                     Workout name: {{ fitFile?.messages.workoutMesgs[0].wktName[0] }}
                 </p>
                 <p class="mt-2 text-center text-sm text-gray-600">
-                    Workout durationTypes: {{ fitFile?.messages.workoutStepMesgs.map((step) => step.durationType).join(', ')
-                    }}
+                    Workout durationTypes: {{ fitFile?.messages.workoutStepMesgs.map((step) => step.durationType).join(', ') }}
                 </p>
                 <p class="mt-2 text-center text-sm text-gray-600">
                     Workout intensities: {{ fitFile?.messages.workoutStepMesgs.map((step) => step.intensity).join(', ') }}
