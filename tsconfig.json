@@ -10,8 +10,9 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
-      "@fit-converter/fit-sdk": ["packages/fit-sdk/src/index.ts"],
-      "@types/garmin__fitsdk": ["packages/@types/garmin__fitsdk/index.d.ts"],
+      "@fit-converter/fit-sdk": [
+        "packages/fit-sdk/src/index.ts",
+      ],
     },
   },
   "references": [

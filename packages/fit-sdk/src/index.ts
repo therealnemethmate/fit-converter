@@ -36,8 +36,10 @@ export async function convertTraining({ messages, errors }: FitFileContent) {
  * @param path - The path to the FIT file to parse.
  * @returns A promise that resolves to the parsed content of the FIT file.
  */
-export async function parseOneFitFile(file: Buffer) {
+export async function parseOneFitFile(file: Buffer): Promise<FitFileContent> {
     const stream = Stream.fromByteArray(file);
     const decoder = new Decoder(stream);
     return decoder.read();
 }
+
+export type { FitFileContent };

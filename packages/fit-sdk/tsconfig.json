@@ -4,7 +4,7 @@
     "src/**/*.ts",
     "src/**/*.js",
     "vite.config.ts",
-    "index.d.ts"
+    "src/index.d.ts"
   ],
   "references": [
     {
