@@ -16,6 +16,7 @@ export default defineConfig(({ mode }) => {
             alias: {
                 '@': path.resolve('./src'),
                 '@fit-converter/fit-sdk': path.resolve('./packages/fit-sdk/src'),
+                '@fit-converter/zwo-sdk': path.resolve('./packages/zwo-sdk/src'),
             },
         },
         define: {

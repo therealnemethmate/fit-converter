@@ -13,6 +13,9 @@
       "@fit-converter/fit-sdk": [
         "packages/fit-sdk/src/index.ts",
       ],
+      "@fit-converter/zwo-sdk": [
+        "packages/zwo-sdk/src/index.ts",
+      ],
     },
   },
   "references": [
