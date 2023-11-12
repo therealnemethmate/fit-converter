@@ -1,19 +1,14 @@
 <script setup lang="ts">
-import { DurationType, FitFileContent, HrZones, Intensity, parseOneFitFile, TargetType, WorkoutStep } from '@fit-converter/fit-sdk';
+import { DurationType, FitFileContent, Intensity, isHRTargetType, parseOneFitFile, WorkoutStep } from '@fit-converter/fit-sdk';
 import { ZwoBuilder } from '@fit-converter/zwo-sdk';
-import { Buffer } from 'buffer';
-import { downloadZip, InputWithSizeMeta } from 'client-zip';
+import { InputWithSizeMeta } from 'client-zip';
 import { ref } from 'vue';
+
+import { downloadAsZip, readBuffer } from '@/utils';
 
 const fitFiles = ref<FitFileContent[]>([]);
 const zwoBuilder = ref<ZwoBuilder>();
 const zwoFileContents = ref<InputWithSizeMeta[]>([]);
-
-async function readBuffer(file: File) {
-    const stream = file.stream();
-    const content = await stream.getReader().read();
-    return Buffer.from(content.value?.buffer as ArrayBuffer);
-}
 
 async function handleUpload(event: Event) {
     const files = (event.target as HTMLInputElement).files;
@@ -29,11 +24,9 @@ async function handleUpload(event: Event) {
         const readFile = await parseOneFitFile(buffer);
         fitFiles.value.push(readFile);
     }
-
-    console.log(fitFiles.value);
 }
 
-async function convertToZwo() {
+async function handleConvertAll() {
     if (!fitFiles.value?.length) {
         console.error('No file uploaded');
         return;
@@ -51,12 +44,7 @@ async function convertToZwo() {
         zwoFileContents.value.push({ name, input });
     }
 
-    const blob = await downloadZip(zwoFileContents.value).blob();
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'fit-converter-zwo.zip';
-    link.click();
+    return downloadAsZip(zwoFileContents.value);
 }
 
 async function convertOne(fitFile: FitFileContent) {
@@ -91,11 +79,7 @@ async function convertOne(fitFile: FitFileContent) {
     return zwoBuilder.value.buildXML();
 }
 
-function isHRTargetType(step: WorkoutStep): step is WorkoutStep & { targetHrZone: HrZones } {
-    return step.targetType === TargetType.HeartRate;
-}
-
-function calculatePowerByHR(step: WorkoutStep) {
+function convertHRToPowerRate(step: WorkoutStep) {
     if (!isHRTargetType(step)) return;
     switch (step.targetHrZone) {
     case 1:
@@ -118,14 +102,14 @@ function iterateWorkout(step: WorkoutStep) {
     case step.intensity === Intensity.Warmup && step.durationType === DurationType.Time:
         zwoBuilder.value?.addWarmupWorkout({
             Cadence: 90,
-            Power: calculatePowerByHR(step),
+            Power: convertHRToPowerRate(step),
             Duration: step.durationTime,
         });
         break;
     case step.intensity === Intensity.Recovery && step.durationType === DurationType.Time:
         zwoBuilder.value?.addSteadyStateWorkout({
             Cadence: 90,
-            Power: calculatePowerByHR(step),
+            Power: convertHRToPowerRate(step),
             Duration: step.durationTime,
         });
         break;
@@ -133,14 +117,14 @@ function iterateWorkout(step: WorkoutStep) {
     case step.intensity === Intensity.Active && step.durationType === DurationType.Time:
         zwoBuilder.value?.addSteadyStateWorkout({
             Cadence: 90,
-            Power: calculatePowerByHR(step),
+            Power: convertHRToPowerRate(step),
             Duration: step.durationTime,
         });
         break;
     case step.intensity === Intensity.Active && step.durationType === DurationType.UntilStepsCompleted:
         zwoBuilder.value?.addSteadyStateWorkout({
             Cadence: 90,
-            Power: calculatePowerByHR(step),
+            Power: convertHRToPowerRate(step),
             Duration: step.durationTime,
         });
         break;
@@ -187,7 +171,7 @@ function iterateWorkout(step: WorkoutStep) {
                     </label>
                 </div>
                 <button class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
-                        @click="convertToZwo"
+                        @click="handleConvertAll"
                         :disabled="!fitFiles">Convert</button>
             </form>
             <div v-if="fitFiles.length">
