@@ -1,0 +1,14 @@
+{
+    "name": "@types/garmin__fitsdk",
+    "version": "0.0.0",
+    "private": true,
+    "types": "index.d.ts",
+    "scripts": {
+        "lint": "eslint --ext .ts --ignore-path .gitignore . $ESLINT_FLAGS"
+    },
+    "devDependencies": {
+        "@fit-converter/eslint": "workspace:*",
+        "@rushstack/eslint-patch": "^1.3.3",
+        "typescript": "^5.2.2"
+    }
+}

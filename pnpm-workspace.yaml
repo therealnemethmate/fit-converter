@@ -1,0 +1,4 @@
+packages:
+  - 'packages/*'
+  - 'packages/__dev__/*'
+  - 'packages/@types/*'

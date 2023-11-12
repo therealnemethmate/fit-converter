@@ -1,0 +1,14 @@
+{
+  "extends": "@fit-converter/tsconfig/tsconfig.json",
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.js",
+    "vite.config.ts",
+    "src/index.d.ts"
+  ],
+  "references": [
+    {
+      "path": "./tsconfig.node.json"
+    }
+  ]
+}
