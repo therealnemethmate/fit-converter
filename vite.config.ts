@@ -11,6 +11,7 @@ export default defineConfig(({ mode }) => {
     }
 
     return {
+        base: '/fit-converter/',
         plugins: [vue()],
         resolve: {
             alias: {
