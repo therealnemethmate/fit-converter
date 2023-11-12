@@ -1,3 +1,4 @@
+import { Buffer } from 'buffer';
 import { downloadZip, InputWithSizeMeta } from 'client-zip';
 
 /**
