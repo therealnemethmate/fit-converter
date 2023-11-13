@@ -1,6 +1,6 @@
 export type FitFileContent = {
     messages: Messages;
-    errors: unknown;
+    errors: unknown[];
 }
 
 export type Messages = {
@@ -9,7 +9,7 @@ export type Messages = {
 }
 
 export type WorkoutMessages = {
-    wktName: string[];
+    wktName: string | string[];
 }
 
 export type WorkoutStep = {

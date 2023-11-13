@@ -9,6 +9,7 @@ import { downloadAsZip, readBuffer } from '@/utils';
 const fitFiles = ref<FitFileContent[]>([]);
 const zwoBuilder = ref<ZwoBuilder>();
 const zwoFileContents = ref<InputWithSizeMeta[]>([]);
+const errors = ref<string[]>([]);
 
 async function handleUpload(event: Event) {
     const files = (event.target as HTMLInputElement).files;
@@ -18,33 +19,59 @@ async function handleUpload(event: Event) {
     }
 
     for (let i = 0; i < files.length; i++) {
-        const file = files.item(i);
-        if (!file) continue;
-        const buffer = await readBuffer(file);
-        const readFile = await parseOneFitFile(buffer);
-        fitFiles.value.push(readFile);
+        try {
+            const file = files.item(i);
+            if (!file) continue;
+            const buffer = await readBuffer(file);
+            const readFile = await parseOneFitFile(buffer);
+            console.log('readFile', { readFile });
+
+            if (readFile.errors.length) {
+                errors.value.push(`'Error parsing file' ${readFile.errors.join(', ')}`);
+                continue;
+            }
+
+            fitFiles.value.push(readFile);
+        } catch (error) {
+            errors.value.push(`'Error reading file' ${(error as Error).message}`);
+            console.error('Error reading file', { error });
+        }
     }
 }
 
 async function handleConvertAll() {
     if (!fitFiles.value?.length) {
-        console.error('No file uploaded');
+        console.error('No files parsed');
         return;
     }
 
     for (const fitFile of fitFiles.value) {
-        const input = await convertOne(fitFile);
-        if (!input) continue;
-        const name = `${fitFile.messages.workoutMesgs[0].wktName.join('_').toLocaleLowerCase().replaceAll(' ', '_')}.zwo`;
-        if (zwoFileContents.value.find((file) => file.name === name)) {
-            console.warn('Skipped duplicate file', { name });
-            continue;
-        }
+        const wktName = fitFile.messages.workoutMesgs[0].wktName;
+        console.log('wktName', { wktName });
+        try {
+            const fileName = typeof wktName === 'string'
+                ? wktName
+                : wktName.join('_').replace(/\n/g, '').toLocaleLowerCase().trimEnd().replaceAll(' ', '_');
+            const input = await convertOne(fitFile);
+            if (!input) continue;
+            const name = `${fileName}.zwo`;
+            
+            if (zwoFileContents.value.find((file) => file.name === name)) {
+                console.warn('Skipped duplicate file', { name });
+                continue;
+            }
 
-        zwoFileContents.value.push({ name, input });
+            zwoFileContents.value.push({ name, input });
+        } catch (error) {
+            errors.value.push(`'Error converting files' ${(error as Error).message}`);
+            console.error('Error converting files', { error });
+        }
     }
 
-    return downloadAsZip(zwoFileContents.value);
+    await downloadAsZip(zwoFileContents.value);
+    if (errors.value.length) {
+        alert(`Some errors occurred: ${errors.value.join(', ')}`);
+    }
 }
 
 async function convertOne(fitFile: FitFileContent) {
@@ -53,8 +80,13 @@ async function convertOne(fitFile: FitFileContent) {
         return;
     }
 
+    const wktName = fitFile.messages.workoutMesgs[0].wktName;
+    const fileName = typeof wktName === 'string'
+        ? wktName
+        : wktName.join(' | ').replace(/\n/g, '');
+
     zwoBuilder.value = new ZwoBuilder({ workout_file: {
-        name: fitFile.messages.workoutMesgs[0].wktName.join(' | ').replace(/\n/g, ''),
+        name: fileName,
         author: '@fit-converter',
         sportType: 'bike',
         tags: [{
@@ -75,7 +107,11 @@ async function convertOne(fitFile: FitFileContent) {
         },
     } });
 
-    fitFile.messages.workoutStepMesgs.forEach(iterateWorkout);
+    fitFile.messages.workoutStepMesgs.forEach(
+        (step) => iterateWorkout(fitFile.messages.workoutStepMesgs, step),
+    );
+
+    zwoBuilder.value?.concatFreeRideWorkoutsWithoutDuration();
     return zwoBuilder.value.buildXML();
 }
 
@@ -97,40 +133,60 @@ function convertHRToPowerRate(step: WorkoutStep) {
     }
 }
 
-function iterateWorkout(step: WorkoutStep) {
+function iterateWorkout(workout: WorkoutStep[], step: WorkoutStep) {
+    switch (step.durationType) {
+    case DurationType.Time:
+        return convertDurationTypeTime(step);
+    case DurationType.Open:
+        return zwoBuilder.value?.addFreeRideWorkout({ Duration: step.durationTime });
+    case DurationType.UntilStepsCompleted:
+        return convertUntilStepsCompleted(workout, step);
+    default:
+        console.error('Unsupported duration type', { durationType: step.durationType });
+    }
+}
+
+function convertDurationTypeTime(step: WorkoutStep) {
     switch (true) {
-    case step.intensity === Intensity.Warmup && step.durationType === DurationType.Time:
+    case step.intensity === Intensity.Warmup:
         zwoBuilder.value?.addWarmupWorkout({
             Cadence: 90,
             Power: convertHRToPowerRate(step),
             Duration: step.durationTime,
         });
         break;
-    case step.intensity === Intensity.Recovery && step.durationType === DurationType.Time:
+    case step.intensity === Intensity.Recovery:
         zwoBuilder.value?.addSteadyStateWorkout({
             Cadence: 90,
             Power: convertHRToPowerRate(step),
             Duration: step.durationTime,
         });
         break;
+    case step.intensity === Intensity.Active:
+        zwoBuilder.value?.addSteadyStateWorkout({
+            Cadence: 90,
+            Power: convertHRToPowerRate(step),
+            Duration: step.durationTime,
+        });
+        break;
+    }
+}
 
-    case step.intensity === Intensity.Active && step.durationType === DurationType.Time:
-        zwoBuilder.value?.addSteadyStateWorkout({
-            Cadence: 90,
-            Power: convertHRToPowerRate(step),
-            Duration: step.durationTime,
-        });
-        break;
-    case step.intensity === Intensity.Active && step.durationType === DurationType.UntilStepsCompleted:
-        zwoBuilder.value?.addSteadyStateWorkout({
-            Cadence: 90,
-            Power: convertHRToPowerRate(step),
-            Duration: step.durationTime,
-        });
-        break;
-    case step.durationType === DurationType.Open:
-        zwoBuilder.value?.addFreeRideWorkout({ Duration: step.durationTime });
-        break;
+function convertUntilStepsCompleted(workout: WorkoutStep[], step: WorkoutStep) {
+    if (!step.durationValue) return;
+    const until = step.messageIndex;
+    const from = step.durationValue;
+
+    // targetValue is the number of times the step should be repeated
+    for (let y = 0; y < step.targetValue; y++) {
+        // we stop before the step that has the repeatUntilStepCpltd flag
+        for (let i = from; i < until; i++) {
+            DurationType.Time === workout[i].durationType && convertDurationTypeTime(workout[i]);
+            DurationType.Open === workout[i].durationType && zwoBuilder.value?.addFreeRideWorkout({
+                // HACK: use previous duration if available, otherwise use 5 minutes
+                Duration: workout[i].durationTime,
+            });
+        }
     }
 }
 
@@ -176,7 +232,15 @@ function iterateWorkout(step: WorkoutStep) {
             </form>
             <div v-if="fitFiles.length">
                 <p class="mt-2 text-center text-sm text-gray-600">
-                    Successfully uploaded {{ fitFiles.length }} files
+                    Successfully uploaded and parsed {{ fitFiles.length }} files
+                </p>
+            </div>
+            <div v-if="errors.length">
+                <p class="mt-2 text-center text-sm text-red-600">
+                    {{ errors.length }} errors occurred
+                </p>
+                <p v-for="error in errors" v-bind:key="error" class="mt-2 text-center text-sm text-red-600">
+                    {{ error }}
                 </p>
             </div>
         </div>

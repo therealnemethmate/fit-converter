@@ -56,4 +56,11 @@ export class ZwoBuilder {
     public addIntervalsTWorkout(intervalsT: IntervalsT) {
         this.workout.workout_file.workout.IntervalsT.push({ $: intervalsT });
     }
+
+    public concatFreeRideWorkoutsWithoutDuration() {
+        const freeRidesWithDuration = this.workout.workout_file.workout.FreeRide.filter((freeRide) => freeRide.$.Duration);
+        if (this.workout.workout_file.workout.FreeRide.length > 2) {
+            this.workout.workout_file.workout.FreeRide = [...freeRidesWithDuration, this.workout.workout_file.workout.FreeRide[0]];
+        }
+    }
 }
