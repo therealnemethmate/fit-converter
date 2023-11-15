@@ -4,12 +4,21 @@ import { ZwoBuilder } from '@fit-converter/zwo-sdk';
 import { InputWithSizeMeta } from 'client-zip';
 import { ref } from 'vue';
 
-import { downloadAsZip, readBuffer } from '@/utils';
+import { convertDuration, convertFileName, convertWorkoutName, downloadAsZip, readBuffer } from '@/utils';
 
 const fitFiles = ref<FitFileContent[]>([]);
 const zwoBuilder = ref<ZwoBuilder>();
 const zwoFileContents = ref<InputWithSizeMeta[]>([]);
 const errors = ref<string[]>([]);
+
+const heartRateToPowerMap = {
+    1: 0.4,
+    2: 0.55,
+    3: 0.75,
+    4: 0.9,
+    5: 1.1,
+    6: 1.3,
+};
 
 async function handleUpload(event: Event) {
     const files = (event.target as HTMLInputElement).files;
@@ -49,15 +58,9 @@ async function handleConvertAll() {
         const wktName = fitFile.messages.workoutMesgs[0].wktName;
         console.log('wktName', { wktName });
         try {
-            const fileName = (typeof wktName === 'string' ? wktName : wktName.join('_'))
-                .replace(/\n/g, '')
-                .toLocaleLowerCase()
-                .trimEnd()
-                .replaceAll(' ', '_');
-
             const input = await convertOne(fitFile);
             if (!input) continue;
-            const name = `${fileName}.zwo`;
+            const name = `${convertFileName(wktName, 'garmin')}.zwo`;
             
             if (zwoFileContents.value.find((file) => file.name === name)) {
                 console.warn('Skipped duplicate file', { name });
@@ -84,9 +87,7 @@ async function convertOne(fitFile: FitFileContent) {
     }
 
     const wktName = fitFile.messages.workoutMesgs[0].wktName;
-    const fileName = typeof wktName === 'string'
-        ? wktName
-        : wktName.join(' | ').replace(/\n/g, '');
+    const fileName = convertWorkoutName(wktName, 'Garmin');
 
     zwoBuilder.value = new ZwoBuilder({ workout_file: {
         name: fileName,
@@ -117,20 +118,7 @@ async function convertOne(fitFile: FitFileContent) {
 
 function convertHRToPowerRate(step: WorkoutStep) {
     if (!isHRTargetType(step)) return;
-    switch (step.targetHrZone) {
-    case 1:
-        return 0.4;
-    case 2:
-        return 0.55;
-    case 3:
-        return 0.75;
-    case 4:
-        return 0.9;
-    case 5:
-        return 1.1;
-    case 6:
-        return 1.3;
-    }
+    return heartRateToPowerMap[step.targetHrZone];
 }
 
 function iterateWorkout(workout: WorkoutStep[], step: WorkoutStep) {
@@ -182,9 +170,7 @@ function convertDurationTypeOpen(step: WorkoutStep) {
         });
     }
 
-    return zwoBuilder.value?.addFreeRideWorkout({
-        Duration: step.durationTime,
-    });
+    return zwoBuilder.value?.addFreeRideWorkout({ Duration: convertDuration(step) });
 }
 
 function convertUntilStepsCompleted(workout: WorkoutStep[], step: WorkoutStep) {
@@ -203,10 +189,6 @@ function convertUntilStepsCompleted(workout: WorkoutStep[], step: WorkoutStep) {
             workout[i].durationType === DurationType.Open && convertDurationTypeOpen(workout[i]);
         }
     }
-}
-
-function convertDuration(step: WorkoutStep) {
-    return step.durationTime ?? (step.durationValue ? (step.durationValue / 1000) : undefined);
 }
 
 </script>
