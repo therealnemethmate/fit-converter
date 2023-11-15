@@ -12,8 +12,8 @@ const zwoFileContents = ref<InputWithSizeMeta[]>([]);
 const errors = ref<string[]>([]);
 
 const heartRateToPowerMap = {
-    1: 0.4,
-    2: 0.55,
+    1: 0.5,
+    2: 0.65,
     3: 0.75,
     4: 0.9,
     5: 1.1,
