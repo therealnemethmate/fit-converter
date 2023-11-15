@@ -54,19 +54,14 @@ async function handleConvertAll() {
         return;
     }
 
-    for (const fitFile of fitFiles.value) {
+    for (const key in fitFiles.value) {
+        const fitFile = fitFiles.value[key];
         const wktName = fitFile.messages.workoutMesgs[0].wktName;
-        console.log('wktName', { wktName });
+        const manufacturer = fitFile.messages.fileIdMesgs[0].manufacturer;
         try {
-            const input = await convertOne(fitFile);
+            const input = await convertOne(fitFile, key);
             if (!input) continue;
-            const name = `${convertFileName(wktName, 'garmin')}.zwo`;
-            
-            if (zwoFileContents.value.find((file) => file.name === name)) {
-                console.warn('Skipped duplicate file', { name });
-                continue;
-            }
-
+            const name = `${convertFileName(wktName, `${manufacturer}_${key}`)}.zwo`;
             zwoFileContents.value.push({ name, input });
         } catch (error) {
             errors.value.push(`'Error converting files' ${(error as Error).message}`);
@@ -80,17 +75,16 @@ async function handleConvertAll() {
     }
 }
 
-async function convertOne(fitFile: FitFileContent) {
+async function convertOne(fitFile: FitFileContent, index: string) {
     if (!fitFile) {
         console.error('No file uploaded');
         return;
     }
 
     const wktName = fitFile.messages.workoutMesgs[0].wktName;
-    const fileName = convertWorkoutName(wktName, 'Garmin');
-
+    const manufacturer = fitFile.messages.fileIdMesgs[0].manufacturer.toUpperCase();
     zwoBuilder.value = new ZwoBuilder({ workout_file: {
-        name: fileName,
+        name: convertWorkoutName(wktName, `${manufacturer} (${index}):`),
         author: '@fit-converter',
         sportType: 'bike',
         tags: [{ $: { name: '@fit-converter' } }],
@@ -185,8 +179,10 @@ function convertUntilStepsCompleted(workout: WorkoutStep[], step: WorkoutStep) {
     for (let y = 1; y < repeatTimes; y++) {
         // we stop before the step that has the repeatUntilStepCpltd flag
         for (let i = from; i < until; i++) {
-            workout[i].durationType === DurationType.Time && convertDurationTypeTime(workout[i]);
-            workout[i].durationType === DurationType.Open && convertDurationTypeOpen(workout[i]);
+            workout[i].durationType === DurationType.Time
+                && convertDurationTypeTime(workout[i]);
+            workout[i].durationType === DurationType.Open
+                && convertDurationTypeOpen(workout[i]);
         }
     }
 }

@@ -35,7 +35,7 @@ export function convertFileName(workoutName: string | string[], prefix?: string)
 }
 
 export function convertWorkoutName(workoutName: string | string[], prefix?: string) {
-    return `${prefix ? `${prefix}: ` : ''}${getWorkoutNameString(workoutName).replace(/\n/g, '')}`;
+    return `${prefix ? `${prefix} ` : ''}${getWorkoutNameString(workoutName).replace(/\n/g, '')}`;
 }
 
 function getWorkoutNameString(workoutName: string | string[]) {

@@ -5,7 +5,17 @@ export type FitFileContent = {
 
 export type Messages = {
     workoutMesgs: WorkoutMessages[];
+    fileIdMesgs: FileIdMessages[];
     workoutStepMesgs: WorkoutStep[];
+}
+
+export type FileIdMessages = {
+    garminProduct: string;
+    manufacturer: string;
+    product: number;
+    serialNumber: number;
+    timeCreated: Date;
+    type: string;
 }
 
 export type WorkoutMessages = {
