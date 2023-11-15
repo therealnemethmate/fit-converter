@@ -92,7 +92,6 @@ async function convertOne(fitFile: FitFileContent) {
         tags: [{
             $: { name: 'from-garmin-fit' },
         }],
-        workoutLength: fitFile.messages.workoutStepMesgs.reduce((acc, step) => acc + (step.durationTime || 0), 0),
         workout: {
             Warmup: [],
             SteadyState: [],
@@ -119,11 +118,11 @@ function convertHRToPowerRate(step: WorkoutStep) {
     if (!isHRTargetType(step)) return;
     switch (step.targetHrZone) {
     case 1:
-        return 0.6;
+        return 0.4;
     case 2:
-        return 0.7;
+        return 0.55;
     case 3:
-        return 0.8;
+        return 0.75;
     case 4:
         return 0.9;
     case 5:
@@ -138,7 +137,7 @@ function iterateWorkout(workout: WorkoutStep[], step: WorkoutStep) {
     case DurationType.Time:
         return convertDurationTypeTime(step);
     case DurationType.Open:
-        return zwoBuilder.value?.addFreeRideWorkout({ Duration: step.durationTime });
+        return convertDurationTypeOpen(step);
     case DurationType.UntilStepsCompleted:
         return convertUntilStepsCompleted(workout, step);
     default:
@@ -172,20 +171,35 @@ function convertDurationTypeTime(step: WorkoutStep) {
     }
 }
 
+function convertDurationTypeOpen(step: WorkoutStep) {
+    if (step.intensity === Intensity.Recovery) {
+        return zwoBuilder.value?.addSteadyStateWorkout({
+            // NOTE: garmin suggests 1 min for recovery steps
+            Duration: 60,
+            Power: convertHRToPowerRate(step),
+            Cadence: 90,
+        });
+    }
+
+    return zwoBuilder.value?.addFreeRideWorkout({
+        Duration: step.durationTime,
+    });
+}
+
 function convertUntilStepsCompleted(workout: WorkoutStep[], step: WorkoutStep) {
     if (!step.durationValue) return;
     const until = step.messageIndex;
     const from = step.durationValue;
+    const repeatTimes = step.targetValue;
 
+    // TODO: use addIntervalsTWorkout instead of this iteration
     // targetValue is the number of times the step should be repeated
-    for (let y = 0; y < step.targetValue; y++) {
+    // we iterate one time less, to avoid adding the steps that already added by convertDurationTypeTime
+    for (let y = 1; y < repeatTimes; y++) {
         // we stop before the step that has the repeatUntilStepCpltd flag
         for (let i = from; i < until; i++) {
-            DurationType.Time === workout[i].durationType && convertDurationTypeTime(workout[i]);
-            DurationType.Open === workout[i].durationType && zwoBuilder.value?.addFreeRideWorkout({
-                // HACK: use previous duration if available, otherwise use 5 minutes
-                Duration: workout[i].durationTime,
-            });
+            workout[i].durationType === DurationType.Time && convertDurationTypeTime(workout[i]);
+            workout[i].durationType === DurationType.Open && convertDurationTypeOpen(workout[i]);
         }
     }
 }
