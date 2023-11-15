@@ -49,9 +49,12 @@ async function handleConvertAll() {
         const wktName = fitFile.messages.workoutMesgs[0].wktName;
         console.log('wktName', { wktName });
         try {
-            const fileName = typeof wktName === 'string'
-                ? wktName
-                : wktName.join('_').replace(/\n/g, '').toLocaleLowerCase().trimEnd().replaceAll(' ', '_');
+            const fileName = (typeof wktName === 'string' ? wktName : wktName.join('_'))
+                .replace(/\n/g, '')
+                .toLocaleLowerCase()
+                .trimEnd()
+                .replaceAll(' ', '_');
+
             const input = await convertOne(fitFile);
             if (!input) continue;
             const name = `${fileName}.zwo`;
@@ -89,9 +92,7 @@ async function convertOne(fitFile: FitFileContent) {
         name: fileName,
         author: '@fit-converter',
         sportType: 'bike',
-        tags: [{
-            $: { name: 'from-garmin-fit' },
-        }],
+        tags: [{ $: { name: '@fit-converter' } }],
         workout: {
             Warmup: [],
             SteadyState: [],
@@ -151,21 +152,21 @@ function convertDurationTypeTime(step: WorkoutStep) {
         zwoBuilder.value?.addWarmupWorkout({
             Cadence: 90,
             Power: convertHRToPowerRate(step),
-            Duration: step.durationTime,
+            Duration: convertDuration(step),
         });
         break;
     case step.intensity === Intensity.Recovery:
         zwoBuilder.value?.addSteadyStateWorkout({
             Cadence: 90,
             Power: convertHRToPowerRate(step),
-            Duration: step.durationTime,
+            Duration: convertDuration(step),
         });
         break;
     case step.intensity === Intensity.Active:
         zwoBuilder.value?.addSteadyStateWorkout({
             Cadence: 90,
             Power: convertHRToPowerRate(step),
-            Duration: step.durationTime,
+            Duration: convertDuration(step),
         });
         break;
     }
@@ -202,6 +203,10 @@ function convertUntilStepsCompleted(workout: WorkoutStep[], step: WorkoutStep) {
             workout[i].durationType === DurationType.Open && convertDurationTypeOpen(workout[i]);
         }
     }
+}
+
+function convertDuration(step: WorkoutStep) {
+    return step.durationTime ?? (step.durationValue ? (step.durationValue / 1000) : undefined);
 }
 
 </script>
