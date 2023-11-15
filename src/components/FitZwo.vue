@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { DurationType, FitFileContent, Intensity, isHRTargetType, parseOneFitFile, WorkoutStep } from '@fit-converter/fit-sdk';
+import { DurationType, FitFileContent, Intensity, isHRTargetType, parseOneFitFile, TargetType, WorkoutStep } from '@fit-converter/fit-sdk';
 import { ZwoBuilder } from '@fit-converter/zwo-sdk';
 import { InputWithSizeMeta } from 'client-zip';
 import { ref } from 'vue';
@@ -129,28 +129,29 @@ function iterateWorkout(workout: WorkoutStep[], step: WorkoutStep) {
 }
 
 function convertDurationTypeTime(step: WorkoutStep) {
-    switch (true) {
-    case step.intensity === Intensity.Warmup:
-        zwoBuilder.value?.addWarmupWorkout({
+    switch (step.intensity) {
+    case Intensity.Warmup:
+        return zwoBuilder.value?.addWarmupWorkout({
             Cadence: 90,
             Power: convertHRToPowerRate(step),
             Duration: convertDuration(step),
         });
-        break;
-    case step.intensity === Intensity.Recovery:
-        zwoBuilder.value?.addSteadyStateWorkout({
+    case Intensity.Recovery:
+        return zwoBuilder.value?.addSteadyStateWorkout({
             Cadence: 90,
             Power: convertHRToPowerRate(step),
             Duration: convertDuration(step),
         });
-        break;
-    case step.intensity === Intensity.Active:
-        zwoBuilder.value?.addSteadyStateWorkout({
+    case Intensity.Active:
+        if (!isHRTargetType(step)) {
+            return zwoBuilder.value?.addFreeRideWorkout({ Duration: convertDuration(step) });
+        }
+
+        return zwoBuilder.value?.addSteadyStateWorkout({
             Cadence: 90,
             Power: convertHRToPowerRate(step),
             Duration: convertDuration(step),
         });
-        break;
     }
 }
 
